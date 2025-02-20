@@ -44,15 +44,15 @@ const StartInterview = () => {
 
         {/* Questions */}
         <QuestionSection
-         mockInterviewQuestion={mockInterviewQuestion}
-         activeQuestionIndex={activeQuestionIndex}
+             mockInterviewQuestion={mockInterviewQuestion}
+             activeQuestionIndex={activeQuestionIndex}
          
          />
 
          {/* Video Audio Recording */}
          <RecordAnswerSection 
-
-         
+            mockInterviewQuestion={mockInterviewQuestion}
+            activeQuestionIndex={activeQuestionIndex}
          />
       
     </div>

@@ -4,8 +4,10 @@ import { Button } from '../../../components/ui/button'
 import Webcam from 'react-webcam'
 import useSpeechToText from 'react-hook-speech-to-text'
 import { Mic, StopCircle } from 'lucide-react'
+import { toast } from "sonner"
+import { chatSession } from '../../../utils/GeminiAImodel'
 
-const RecordAnswerSection = () => {
+const RecordAnswerSection = ({mockInterviewQuestion,activeQuestionIndex}) => {
     const {
         error,
         interimResult,
@@ -13,56 +15,80 @@ const RecordAnswerSection = () => {
         results,
         startSpeechToText,
         stopSpeechToText,
-      } = useSpeechToText({
+    } = useSpeechToText({
         continuous: true,
         useLegacyResults: false
-      });
-      
-      const [userAnswer,setUserAnswer] = useState('')
-      useEffect(()=>{
-        results.map((result)=>(
-            setUserAnswer(prevAns=>prevAns+result?.transcript)
+    });
+
+    const [userAnswer, setUserAnswer] = useState('')
+
+    useEffect(() => {
+        results.map((result) => (
+            setUserAnswer(prevAns => prevAns + result?.transcript)
         ))
-      },[results])
-  return (
-    <div className="flex flex-col">
-        <div className='flex flex-col justify-center items-center bg-secondary rounded-lg p-5 my-10 '>
-            <Image
-            alt='image'
-            className='absolute'
-            width={399}
-            height={600}
-            src={`https://cdn.pixabay.com/photo/2022/04/03/18/28/webcam-7109621_1280.png`}
+    }, [results])
 
-            />
-            <Webcam
-            mirrored={true}
-            style={{
-                height:300,
-                width:'100%',
-                zIndex: 10
+    const saveUserAnswer = async() => {
+        if (isRecording) {
+            stopSpeechToText()
+            if (userAnswer?.length < 6) {
+                toast('Error while saving your answer, Please record again!.')
+                return;
+            }
+            console.log('in ai prompt')
+            const feedbackPropmt = `Question ${mockInterviewQuestion[activeQuestionIndex]?.question} ,
+                                    User Answer: ${userAnswer} ,Depends on question and user answer for given interview question ,
+                                    please give use rating for answer and feedback as area of improvement if any ,
+                                    in just 3 to 5 lines to improve it in JSON format with rating field and feebback field `
 
-            }}
-            
-            />
+            const result = await chatSession.sendMessage(feedbackPropmt)
+            const mockJsonResp = result.response.text().replace('```json', '').replace('```', '')
+            const jsonFeedbackRatingResp = JSON.parse(mockJsonResp)
 
-
-        
-        </div>
-        <Button variant='outline' className='left-2 bg-green-200 
-            
-        '
-        onClick={isRecording?stopSpeechToText:startSpeechToText}>{isRecording
-        ?
-        <h2 className="flex gap-2 text-red-600">
-            
-            <Mic className='text-base animate-pulse '/> Stop Audio Recording  
-        </h2>
-        :
-        `Record Answer`
+        } else {
+            startSpeechToText()
         }
-        </Button>
-        {/* <div>
+    }
+    return (
+        <div className="flex flex-col">
+            <div className='flex flex-col justify-center items-center bg-secondary rounded-lg p-5 my-10 '>
+                <Image
+                    alt='image'
+                    className='absolute'
+                    width={399}
+                    height={600}
+                    src={`https://cdn.pixabay.com/photo/2022/04/03/18/28/webcam-7109621_1280.png`}
+
+                />
+                <Webcam
+                    mirrored={true}
+                    style={{
+                        height: 300,
+                        width: '100%',
+                        zIndex: 10
+
+                    }}
+
+                />
+
+
+
+            </div>
+            <Button variant='outline' className='left-2 bg-green-200'
+                onClick={
+                    saveUserAnswer
+                }>
+                {isRecording
+                    ?
+                    <h2 className="flex gap-2 text-red-600">
+
+                        <Mic className='text-base animate-pulse ' /> Stop Audio Recording
+                    </h2>
+                    :
+                    `Record Answer`
+                }
+            </Button>
+            {/* <div>
       <h1>Recording: {isRecording.toString()}</h1>
       <button onClick={isRecording ? stopSpeechToText : startSpeechToText}>
         {isRecording ? 'Stop Recording' : 'Start Recording'}
@@ -74,8 +100,8 @@ const RecordAnswerSection = () => {
         {interimResult && <li>{interimResult}</li>}
       </ul>
     </div> */}
-    </div>
-  )
+        </div>
+    )
 }
 
 export default RecordAnswerSection
