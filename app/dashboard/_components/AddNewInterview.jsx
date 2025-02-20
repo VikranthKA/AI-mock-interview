@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import {v4 as uuid} from 'uuid'
+import { v4 as uuid } from 'uuid'
 import {
   Dialog,
   DialogContent,
@@ -17,18 +17,20 @@ import { db } from "../../../utils/db";
 import { mockInterview } from "../../../utils/schema";
 import { useUser } from "@clerk/nextjs";
 import moment from "moment";
+import { useRouter } from "next/navigation";
 
 const AddNewInterview = () => {
   const [isOpenDialog, setIsOpenDialog] = useState(false);
-  const [loading,setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [formState, setFormState] = useState({
     jobRole: "",
     jobDesc: "",
     yearofExp: "",
   });
-  const {user} = useUser()
+  const { user } = useUser()
+  const router = useRouter()
 
-  const [JSONResp,setJSONResp] = useState([])
+  const [JSONResp, setJSONResp] = useState([])
 
   // Handle form input changes
   const handleFormChange = (e) => {
@@ -40,36 +42,41 @@ const AddNewInterview = () => {
   };
 
   // Handle form submission
-  const handleSubmit =async (e) => {
+  const handleSubmit = async (e) => {
     setLoading(true)
     e.preventDefault();
     console.log("Form Data Submitted:", formState);
     const InputPrompt = `Job position:${formState.jobRole} ,Job Description:${formState.jobDesc}, Years of Experience:${formState.yearofExp}, Depends on Job Position, Description and Years of Experience give us 5 interview questions along with the answers in JSON format, Give us queston and answer field on JSON.`
     const result = await chatSession.sendMessage(InputPrompt)
-const MockJSONResp = result.response.text().replace('```json','').replace('```','')
-console.log(JSON.parse(MockJSONResp))
-setJSONResp(MockJSONResp)
+    const MockJSONResp = result.response.text().replace('```json', '').replace('```', '')
+    console.log(JSON.parse(MockJSONResp))
+    setJSONResp(MockJSONResp)
 
-if(MockJSONResp){
+    if (MockJSONResp) {
 
 
-const resp = await db.insert(mockInterview)
-.values({
-    mockId:uuid(),
-    jsonMockResp:MockJSONResp,
-    jobPosition:formState.jobRole,
-    jobExperience:formState.yearofExp,
-    jobDesc:formState.jobDesc,
-    createdBy:user?.primaryEmailAddress?.emailAddress,
-    createdAt:moment().format('DD-MM-yyyy')
+      const resp = await db.insert(mockInterview)
+        .values({
+          mockId: uuid(),
+          jsonMockResp: MockJSONResp,
+          jobPosition: formState.jobRole,
+          jobExperience: formState.yearofExp,
+          jobDesc: formState.jobDesc,
+          createdBy: user?.primaryEmailAddress?.emailAddress,
+          createdAt: moment().format('DD-MM-yyyy')
 
-}).returning({mockId:mockInterview.mockId})
-console.log(resp,"mid")
-}else{
-    console.log('error')
-}
-    setIsOpenDialog(false);
-    setLoading(false)
+        }).returning({ mockId: mockInterview.mockId })
+      console.log(resp, "mid")
+      if (resp[0].mockId) {
+        setIsOpenDialog(false);
+        setLoading(false)
+        router.push(`/dashboard/interview/${resp[0].mockId}`)
+
+      }
+    } else {
+      console.log('error')
+    }
+
   };
 
   return (
@@ -148,16 +155,16 @@ console.log(resp,"mid")
               </Button>
               <Button type="submit" disable={loading.toString()}>{
                 loading ? <>
-                <LoaderCircle className="animate-spin"/>
-                Generating from AI
+                  <LoaderCircle className="animate-spin" />
+                  Generating from AI
                 </> : 'Start Interview'
-}</Button>
+              }</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
     </div>
-  ); 
+  );
 };
 
 export default AddNewInterview;
