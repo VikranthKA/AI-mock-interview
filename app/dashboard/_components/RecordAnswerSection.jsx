@@ -6,8 +6,14 @@ import useSpeechToText from 'react-hook-speech-to-text'
 import { Mic, StopCircle } from 'lucide-react'
 import { toast } from "sonner"
 import { chatSession } from '../../../utils/GeminiAImodel'
+import { db } from "../../../utils/db";
+import { UserAnswer } from '../../../utils/schema'
+import { useUser } from '@clerk/nextjs'
+import moment from 'moment'
 
-const RecordAnswerSection = ({mockInterviewQuestion,activeQuestionIndex}) => {
+const RecordAnswerSection = ({ interviewData, mockInterviewQuestion, activeQuestionIndex }) => {
+    const { user } = useUser()
+    const [loading, setLoading] = useState(false)
     const {
         error,
         interimResult,
@@ -15,6 +21,7 @@ const RecordAnswerSection = ({mockInterviewQuestion,activeQuestionIndex}) => {
         results,
         startSpeechToText,
         stopSpeechToText,
+        setResults
     } = useSpeechToText({
         continuous: true,
         useLegacyResults: false
@@ -28,26 +35,66 @@ const RecordAnswerSection = ({mockInterviewQuestion,activeQuestionIndex}) => {
         ))
     }, [results])
 
-    const saveUserAnswer = async() => {
+    useEffect(() => {
+        if (!isRecording && userAnswer.length > 6) {
+            updateUserAnswer()
+        }
+
+    }, [userAnswer])
+
+    const startStopRecording = async () => {
         if (isRecording) {
             stopSpeechToText()
-            if (userAnswer?.length < 6) {
-                toast('Error while saving your answer, Please record again!.')
-                return;
-            }
-            console.log('in ai prompt')
-            const feedbackPropmt = `Question ${mockInterviewQuestion[activeQuestionIndex]?.question} ,
-                                    User Answer: ${userAnswer} ,Depends on question and user answer for given interview question ,
-                                    please give use rating for answer and feedback as area of improvement if any ,
-                                    in just 3 to 5 lines to improve it in JSON format with rating field and feebback field `
+            // if (userAnswer?.length < 6) {
+            //     setLoading(false)
+            //     toast('Error while saving your answer, Please record again!.')
+            //     return;
+            // }
 
-            const result = await chatSession.sendMessage(feedbackPropmt)
-            const mockJsonResp = result.response.text().replace('```json', '').replace('```', '')
-            const jsonFeedbackRatingResp = JSON.parse(mockJsonResp)
 
         } else {
             startSpeechToText()
         }
+    }
+
+    const updateUserAnswer = async () => {
+        console.log('in ai prompt')
+
+        setLoading(true)
+        const feedbackPropmt = `Question ${mockInterviewQuestion[activeQuestionIndex]?.question} ,
+                                User Answer: ${userAnswer} ,Depends on question and user answer for given interview question ,
+                                please give use rating for answer and feedback as area of improvement if any ,
+                                in just 3 to 5 lines to improve it in JSON format with rating field and feebback field `
+
+        const result = await chatSession.sendMessage(feedbackPropmt)
+        const mockJsonResp = result.response.text().replace('```json', '').replace('```', '')
+        const jsonFeedbackRatingResp = JSON.parse(mockJsonResp)
+
+        const addRecordToDB =await db.insert(UserAnswer)
+            .values({
+                mockIdRef: interviewData?.mockId,
+                question: mockInterviewQuestion[activeQuestionIndex]?.question,
+                correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+                userAns: userAnswer,
+                feedback: jsonFeedbackRatingResp?.feedback,
+                rating: jsonFeedbackRatingResp?.rating,
+                userEmail: user?.primaryEmailAddress?.emailAddress,
+                createdAt: moment().format('DD-MM-yyyy')
+            })
+
+        console.log(addRecordToDB,"db")
+
+        if (addRecordToDB) {
+            toast('Answer recorded successfully!')
+            setUserAnswer('')
+            setLoading(false)
+            setResults([])
+        }
+        setResults([])
+        setLoading(false)
+
+
+
     }
     return (
         <div className="flex flex-col">
@@ -74,9 +121,11 @@ const RecordAnswerSection = ({mockInterviewQuestion,activeQuestionIndex}) => {
 
 
             </div>
-            <Button variant='outline' className='left-2 bg-green-200'
+            <Button variant='outline'
+                disable={loading ? 'true' : 'false'}
+                className='left-2 bg-green-200'
                 onClick={
-                    saveUserAnswer
+                    startStopRecording
                 }>
                 {isRecording
                     ?

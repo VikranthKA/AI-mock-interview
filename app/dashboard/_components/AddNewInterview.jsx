@@ -11,7 +11,6 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Textarea } from "../../../components/ui/textarea";
 import { chatSession } from "../../../utils/GeminiAImodel";
-import { is } from "drizzle-orm";
 import { LoaderCircle } from "lucide-react";
 import { db } from "../../../utils/db";
 import { mockInterview } from "../../../utils/schema";
