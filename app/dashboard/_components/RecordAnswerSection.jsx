@@ -103,14 +103,14 @@ const RecordAnswerSection = ({ interviewData, mockInterviewQuestion, activeQuest
                     alt='image'
                     className='absolute'
                     width={399}
-                    height={600}
+                    height={400}
                     src={`https://cdn.pixabay.com/photo/2022/04/03/18/28/webcam-7109621_1280.png`}
 
                 />
                 <Webcam
                     mirrored={true}
                     style={{
-                        height: 300,
+                        height: 250,
                         width: '100%',
                         zIndex: 10
 

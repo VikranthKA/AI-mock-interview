@@ -53,7 +53,7 @@ const StartInterview = () => {
                 />
 
                 {/* Video Audio Recording */}
-                <div>
+                <div >
 
                     <RecordAnswerSection
                         mockInterviewQuestion={mockInterviewQuestion}
@@ -61,16 +61,14 @@ const StartInterview = () => {
                         interviewData={interviewData}
                     />
                     <div className='flex justify-end mt-6 gap-7'>
-                        {activeQuestionIndex > 0 && <Button  onClick={()=>setActiveQuestionIndex(activeQuestionIndex-1)}>Previous Question</Button>}
-                        {activeQuestionIndex!=mockInterviewQuestion?.length-1 && <Button onClick={()=>setActiveQuestionIndex(activeQuestionIndex+1)}>Next Question</Button>}
+                        {activeQuestionIndex > 0 && <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}>Previous Question</Button>}
+                        {activeQuestionIndex != mockInterviewQuestion?.length - 1 && <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}>Next Question</Button>}
                         {activeQuestionIndex === mockInterviewQuestion?.length - 1 &&
-                        <Link href={`/dashboard/interview/${interviewId}/feedback`}>
-                        
-                            <Button  >End Interview</Button>
-                        </Link>
-                            }
+                            <Link href={`/dashboard/interview/${interviewId}/feedback`}>
 
-
+                                <Button  >End Interview</Button>
+                            </Link>
+                        }
                     </div>
                 </div>
 
